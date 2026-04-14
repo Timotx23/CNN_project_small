@@ -36,7 +36,7 @@ class PreProcessCamera:
         cams: list = enumerate_cameras(self.os) 
         for cam in cams:
             # Test the index before returning it
-            if cam.name.lower() == "facetime hd camera": # -> change this in future sothat it works with the pi
+            if cam.name.lower() == "imx219": # -> change this in future sothat it works with the pi
                 test_cap = cv2.VideoCapture(cam.index, self.os)
                 if test_cap.isOpened():
                     success, _ = test_cap.read()
