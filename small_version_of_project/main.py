@@ -71,7 +71,7 @@ class Commands(ICommands):
     def execute(self, ui) -> bool:
         action = self.commands.get(ui)
         if ui == "es":
-            EndSystem.terminate(self.model.video)
+            EndSystem.terminate(self.model.video, self.model.pre_process_camera)
         if action:
             action(self.model)
             return True

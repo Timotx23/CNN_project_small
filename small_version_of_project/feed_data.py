@@ -134,6 +134,8 @@ class Camera:
             raise ValueError("Failed to verify video")
 
         self.frame_counter += 1
+        cv2.imshow("Camera feed" , frame)
+        cv2.waitKey(1)
 
         if self.frame_counter % 3 == 0 and self.model.test_mode is True:
             correct_frame_format: torch.Tensor = self.tensorizedframe.correct_tensor(frame)
