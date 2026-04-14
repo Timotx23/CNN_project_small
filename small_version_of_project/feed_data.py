@@ -48,7 +48,7 @@ class PreProcessCamera:
                 picam2.start()
                 frame = picam2.capture_array()
                 picam2.stop()
-
+                picam2.close()
                 if frame is not None:
                     print("CAMERA WORKING imx219 0")
                     return "picamera2", 0, None

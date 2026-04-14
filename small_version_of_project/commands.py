@@ -18,11 +18,11 @@ class EndSystem(IEndSystem):
 
     @staticmethod
     def terminate(video, pre_process):
-        #ADD a detection method sothat it correctly identifies if it is Picamera2 or CV2
-        if pre_process.camera_type == "picamera2":
+        
+        if pre_process.camera_type == "picamera2": # if on linux
             video.stop()
             video.close()
-        else:
+        else: #If litterally anywhere else
             video.release()
         cv2.destroyAllWindows()
         sys.exit("Ended the system and released video and destroyed all windows")
