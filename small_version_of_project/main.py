@@ -13,21 +13,14 @@ class CallModel:
         self.test_mode = False
         self.system_status = False
         self.running = True
-        self.video = self.prep_video()
+        
 
         self.command_queue = queue.Queue()
         self.command_handler = Commands(self)
         self.output_queue = queue.Queue()
+        self.pre_process_camera = PreProcessCamera()
+        self.video = self.pre_process_camera.open_camera()
         
-        
-    def prep_video(self):
-        pre_process_camera = PreProcessCamera()
-        os = pre_process_camera.get_os()
-        path = pre_process_camera.get_camera_path()
-    
-        video = cv2.VideoCapture(path, os)
-        return video
-
     def input_listener(self):
         while self.running:
             ui = input("Enter command: ").strip()
