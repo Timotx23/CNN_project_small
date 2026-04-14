@@ -50,7 +50,6 @@ class PreProcessCamera:
                 picam2.stop()
                 picam2.close()
                 if frame is not None:
-                    print("CAMERA WORKING imx219 0")
                     return "picamera2", 0, None
 
             except Exception as e:
@@ -62,7 +61,7 @@ class PreProcessCamera:
         for cam in cams:
             cam_name = cam.name.lower()
 
-            if "facetime" in cam_name or "webcam" in cam_name or "camera" in cam_name:
+            if "facecam" in cam_name or "webcam" in cam_name or "camera" in cam_name:
                 test_cap = cv2.VideoCapture(cam.index, cam.backend)
 
                 if test_cap.isOpened():
@@ -127,15 +126,16 @@ class Camera:
 
         return False, None
 
-    def get_video(self, output_queue) -> bool:
+    def get_video(self, output_queue, show_recording) -> bool:
         success, frame = self.read_frame()
 
         if not success or frame is None:
             raise ValueError("Failed to verify video")
 
         self.frame_counter += 1
-        cv2.imshow("Camera feed" , frame)
-        cv2.waitKey(1)
+        if show_recording == True:
+            cv2.imshow("Camera feed" , frame)
+            cv2.waitKey(1)
 
         if self.frame_counter % 3 == 0 and self.model.test_mode is True:
             correct_frame_format: torch.Tensor = self.tensorizedframe.correct_tensor(frame)

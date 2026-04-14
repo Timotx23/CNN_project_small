@@ -1,4 +1,4 @@
-from interfaces import IStartSystem, IEndSystem, IStartTest, IEndTest
+from interfaces import IStartSystem, IEndSystem, IStartTest, IEndTest, ICommands
 import cv2
 import sys
 
@@ -40,4 +40,26 @@ class EndTest(IEndTest):
     def end_test(model):
         model.test_mode = False
         print("Ending test")
+
    
+class Commands(ICommands):
+    def __init__(self, model):
+       self.model = model
+       self.commands = {
+            "ss": StartSystem.start_system,
+            "es": EndSystem.end_system,
+            "st": StartTest.start_test,
+            "et": EndTest.end_test
+        }
+       
+    def execute(self, ui) -> bool:
+        action = self.commands.get(ui)
+        if ui == "es":
+            EndSystem.terminate(self.model.video, self.model.pre_process_camera)
+        if action:
+            action(self.model)
+            return True
+
+        print(f"Unknown command: {ui}")
+        return False
+

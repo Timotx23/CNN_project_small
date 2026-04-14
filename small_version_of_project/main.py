@@ -1,19 +1,18 @@
 from feed_data import Camera, PreProcessCamera
 import threading
 import queue
-from interfaces import ICommands
-from commands import StartSystem, EndSystem, StartTest, EndTest
+from commands import Commands
 import time
-import cv2
+
 
 
 
 class CallModel:
-    def __init__(self):
+    def __init__(self, show_video):
         self.test_mode = False
         self.system_status = False
         self.running = True
-        
+        self.show_video = show_video
 
         self.command_queue = queue.Queue()
         self.command_handler = Commands(self)
@@ -42,8 +41,6 @@ class CallModel:
         dropout_prob=0.2
         camera = Camera(dropout_prob, self)
 
-       
-        
         while self.running:
             self.process_commands()
             self.process_output()
@@ -52,35 +49,17 @@ class CallModel:
                 print("System is off. Enter 'ss' to start the system.")
                 time.sleep(0.5)
                 
-            camera.get_video(self.output_queue)
+            camera.get_video(self.output_queue, self.show_video)
             time.sleep(0.01)
             
             
         
         
-class Commands(ICommands):
-    def __init__(self, model):
-       self.model = model
-       self.commands = {
-            "ss": StartSystem.start_system,
-            "es": EndSystem.end_system,
-            "st": StartTest.start_test,
-            "et": EndTest.end_test
-        }
-       
-    def execute(self, ui) -> bool:
-        action = self.commands.get(ui)
-        if ui == "es":
-            EndSystem.terminate(self.model.video, self.model.pre_process_camera)
-        if action:
-            action(self.model)
-            return True
-
-        print(f"Unknown command: {ui}")
-        return False
-
-call_model = CallModel()
+show_vid = False
+call_model = CallModel(show_vid)
 call_model.testing_model()
 
 
-
+#TODO -> Show video could be made better as an actuall terminal command
+#TODO -> Clean up main.py seperate the threading cuz its messy and doesnt have to be there
+#TODO -> Terminal input is still messi ie it doesn't let me type anything cleanly without it being burried making it confusing if I have alr printed something or not
