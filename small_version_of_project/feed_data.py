@@ -64,17 +64,16 @@ class PreProcessCamera:
             if "facecam" in cam_name or "webcam" in cam_name or "camera" in cam_name:
                 test_cap = cv2.VideoCapture(cam.index, cam.backend)
 
-                if test_cap.isOpened():
-                    success, _ = test_cap.read()
-                    test_cap.release()
-
-                    if success:
-                        print("CAMERA WORKING", cam.name, cam.index)
-                        return "cv2", cam.index, cam.backend
-                    else:
-                        print(f"Warning: Index {cam.index} matched name but failed to read a frame.")
-                else:
+                if not test_cap.isOpened():
                     print(f"Warning: Index {cam.index} matched but failed to open.")
+                success, _ = test_cap.read()
+                test_cap.release()
+
+                if  not success:
+                    print(f"Warning: Index {cam.index} matched name but failed to read a frame.")
+                print("CAMERA WORKING", cam.name, cam.index)
+                return "cv2", cam.index, cam.backend
+                    
 
         raise ValueError("No usable camera could be found.")
 
@@ -142,8 +141,8 @@ class Camera:
             correct_frame_format = correct_frame_format.to(device)
             model_call: LoadModel = self.load_model.set_frame_to_model(correct_frame_format)
             prediction: tuple = self.load_model.get_predictions(model_call)
-            output_queue.put(prediction)
-
+            if self.model.terminal_mode == "model":
+                output_queue.put(prediction)
         return True
     
     

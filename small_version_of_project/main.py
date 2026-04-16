@@ -4,62 +4,77 @@ import queue
 from commands import Commands
 import time
 
+class InputQueue:
+    def __init__(self, owner):
+        self.owner = owner
+        self.command_queue = queue.Queue()
+        
+        self.output_queue = queue.Queue()
+    def input_listener(self):
+        if self.owner.system_status == False:
+            with self.owner.terminal_lock: 
+                print("System is off. Enter 'ss' to start the system.")
+            
+                
+        while self.owner.running:
+            self.owner.ready_for_input.wait()
+            ui = input("Enter command: ").strip()
+            if ui:
+                self.command_queue.put(ui)
+
+    def process_commands(self):
+        while not self.command_queue.empty():
+                cmd = self.command_queue.get()
+                self.owner.command_handler.execute(cmd)
+                self.owner.ready_for_input.set()
+    
+    def process_output(self):
+
+        while not self.output_queue.empty():
+            if not self.command_queue.empty():
+                break  # prioritize commands
+            msg = self.output_queue.get()
+            with self.owner.terminal_lock:
+                print(msg)
 
 
 
 class CallModel:
-    def __init__(self, show_video):
+    def __init__(self):
         self.test_mode = False
         self.system_status = False
         self.running = True
-        self.show_video = show_video
-
-        self.command_queue = queue.Queue()
+        self.show_recording = False
+        self.terminal_lock = threading.Lock()
+        self.terminal_mode = "user"
         self.command_handler = Commands(self)
-        self.output_queue = queue.Queue()
         self.pre_process_camera = PreProcessCamera()
+        self.ready_for_input = threading.Event()
+        self.ready_for_input.set()
+        self.input_queue = InputQueue(self)
         self.video = self.pre_process_camera.open_camera()
         
-    def input_listener(self):
-        while self.running:
-            ui = input("Enter command: ").strip()
-            self.command_queue.put(ui)
-
-    def process_commands(self):
-        while not self.command_queue.empty():
-            cmd = self.command_queue.get()
-            self.command_handler.execute(cmd)
+        
     
-    def process_output(self):
-        while not self.output_queue.empty():
-            print(self.output_queue.get())
-            
-
     def testing_model(self):
-        input_thread = threading.Thread(target=self.input_listener, daemon=True)
+        input_thread = threading.Thread(target=self.input_queue.input_listener, daemon=True)
         input_thread.start()
         dropout_prob=0.2
         camera = Camera(dropout_prob, self)
+ 
+      
 
         while self.running:
-            self.process_commands()
-            self.process_output()
-           
-            if not self.system_status:
-                print("System is off. Enter 'ss' to start the system.")
-                time.sleep(0.5)
-                
-            camera.get_video(self.output_queue, self.show_video)
+            self.input_queue.process_commands()
+            self.input_queue.process_output()
+            camera.get_video(self.input_queue.output_queue, self.show_recording)
             time.sleep(0.01)
             
             
         
         
-show_vid = False
-call_model = CallModel(show_vid)
+
+call_model = CallModel()
 call_model.testing_model()
 
 
-#TODO -> Show video could be made better as an actuall terminal command
-#TODO -> Clean up main.py seperate the threading cuz its messy and doesnt have to be there
-#TODO -> Terminal input is still messi ie it doesn't let me type anything cleanly without it being burried making it confusing if I have alr printed something or not
