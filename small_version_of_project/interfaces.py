@@ -37,7 +37,7 @@ class IShowVideo(ABC):
     def end_video(model):
         pass
 
-class ITerminalManger(ABC):
+class ITerminalManager(ABC):
     @abstractmethod
     def lock_terminal(model):
         pass
