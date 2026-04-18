@@ -1,4 +1,4 @@
-from interfaces import IStartSystem, IEndSystem, IStartTest, IEndTest, ICommands
+from interfaces import IStartSystem, IEndSystem, IStartTest, IEndTest, ICommands, IShowVideo, ITerminalManager
 import cv2
 import sys
 
@@ -55,7 +55,7 @@ class EndTest(IEndTest):
             print("Ending test")
 
 
-class ShowVideo:
+class ShowVideo(IShowVideo):
     @staticmethod
     def show_video(model):
         model.show_recording = True
@@ -68,7 +68,7 @@ class ShowVideo:
             print("Stop recording")
 
 
-class TerminalOutputManager:
+class TerminalOutputManager(ITerminalManager):
     @staticmethod
     def lock_terminal(model):
         if model.terminal_mode == "user":

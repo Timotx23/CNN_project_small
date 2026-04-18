@@ -1,6 +1,5 @@
 torch
-torchvision
-opencv-python
 cv2-enumerate-cameras
-numpy
-matplotlib
+
+
+

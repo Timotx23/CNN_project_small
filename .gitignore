@@ -1,1 +1,3 @@
 small_version_of_project/model/data
+.venv
+small_version_of_project/ __pycache__
