@@ -75,7 +75,7 @@ class PreProcessCamera:
                 return "cv2", cam.index, cam.backend
                     
 
-        raise ValueError("No usable camera could be found.")
+        return False
 
     def open_camera(self):
         """
@@ -97,16 +97,17 @@ class PreProcessCamera:
                 raise ValueError("Failed to open OpenCV camera.")
             return cam
 
-        raise ValueError("Unknown camera type.")
+        return False
 
 
 class Camera:
-    def __init__(self, dropout_prob: float, model):
-        super().__init__()
-        self.load_model: LoadModel = LoadModel(dropout_prob)
-        self.tensorizedframe: TensorizedFrame = TensorizedFrame()
-        self.frame_counter = 0
+    def __init__(self,model):
+        
         self.model = model
+        self.load_model: LoadModel = model.load_model() 
+        self.tensorizedframe: TensorizedFrame = model.load_tensorized_frame()
+        self.frame_counter = 0
+       
 
         self.pre_process_camera = self.model.pre_process_camera
         self.video = self.model.video
@@ -179,10 +180,13 @@ class TensorizedFrame:
 
 class LoadModel:
     def __init__(self, dropout_prob):
-        self.model = model.CNN_model.SimpleCNN_dropout(dropout_prob).to(device)
-        self.model.load_state_dict(trained_weights)# Here i have to add the finished trained weights
-        self.model.to(device)
-        self.model.eval()
+        try:
+            self.model = model.CNN_model.SimpleCNN_dropout(dropout_prob).to(device)
+            self.model.load_state_dict(trained_weights)# Here i have to add the finished trained weights
+            self.model.to(device)
+            self.model.eval()
+        except:
+            return False
         
 
     def set_frame_to_model(self,frame) -> model.CNN_model.SimpleCNN_dropout:

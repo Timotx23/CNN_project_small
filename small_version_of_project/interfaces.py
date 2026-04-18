@@ -45,3 +45,28 @@ class ITerminalManager(ABC):
     @abstractmethod
     def release_terminal(model):
         pass
+
+
+class ISimController(ABC):
+    @abstractmethod
+    def call_model(self):
+        pass
+    @abstractmethod
+    def camera_preprocessing(self):
+        pass
+
+    @abstractmethod
+    def load_model(self):
+        pass
+
+    @abstractmethod
+    def running_model(self, camera):
+        pass
+
+    @abstractmethod
+    def load_tensorized_frame(self):
+        pass
+
+    @abstractmethod
+    def system_setup(self):
+        pass
