@@ -22,9 +22,9 @@ def to_devices():
   
 #Actual CNN work
 # Define a simple CNN model
-class CNN_layers(nn.Module):
+class CNNLayers(nn.Module):
     def __init__(self):
-        super(CNN_layers, self).__init__()
+        super(CNNLayers, self).__init__()
         
         # First Convolutional Layer
         self.conv1 = nn.Conv2d(in_channels= 3 , out_channels=32, kernel_size=3, padding=1)
@@ -55,7 +55,7 @@ class CNN_layers(nn.Module):
 
 
 # Define a simple CNN model
-class SimpleCNN_dropout(CNN_layers):
+class SimpleCNNDropout(CNNLayers):
     # use inheritance to avoid code duplication
     def __init__(self, dropout_prob):
         ## YOUR CODE HERE ##

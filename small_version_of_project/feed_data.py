@@ -4,21 +4,18 @@ from cv2_enumerate_cameras import enumerate_cameras
 import torch
 import numpy as np
 import model.CNN_model
-
-HEIGHT = 32
-WIDTH = 32
-RGB = 3
-device = model.CNN_model.to_devices()
-trained_weights = torch.load("model/model_d2.pth", map_location=device)
+from interfaces import ILoadModel, IPrepCamera
 
 
-class PreProcessCamera:
+
+
+class CameraPreper(IPrepCamera):
     def __init__(self):
         self.system = platform.system()
-        self.backend = self.get_os()
+        self.backend = self._get_os()
         self.camera_type, self.path, self.cv_backend = self.get_camera_path()
 
-    def get_os(self) -> int:
+    def _get_os(self) -> int:
         """
         Detect OS-specific OpenCV backend.
         """
@@ -112,7 +109,7 @@ class Camera:
         self.pre_process_camera = self.model.pre_process_camera
         self.video = self.model.video
 
-    def read_frame(self):
+    def _read_frame(self):
         """
         Read one frame from either Picamera2 or OpenCV.
         """
@@ -127,7 +124,7 @@ class Camera:
         return False, None
 
     def get_video(self, output_queue, show_recording) -> bool:
-        success, frame = self.read_frame()
+        success, frame = self._read_frame()
 
         if not success or frame is None:
             raise ValueError("Failed to verify video")
@@ -139,9 +136,7 @@ class Camera:
 
         if self.frame_counter % 3 == 0 and self.model.test_mode is True:
             correct_frame_format: torch.Tensor = self.tensorizedframe.correct_tensor(frame)
-            correct_frame_format = correct_frame_format.to(device)
-            model_call: LoadModel = self.load_model.set_frame_to_model(correct_frame_format)
-            prediction: tuple = self.load_model.get_predictions(model_call)
+            prediction: tuple = self.load_model.get_predictions(correct_frame_format)
             if self.model.terminal_mode == "model":
                 output_queue.put(prediction)
         return True
@@ -151,14 +146,15 @@ class Camera:
 
 class TensorizedFrame:
 
-    def __init__(self) -> None:
+    def __init__(self, height, width, rgb, device) -> None:
         """This class has 1 major task which is to prepare the frame for the CNN"""
+        self.device = device
         self.corrected_frame = None
-     
-
-    
+        self.height = height
+        self.width = width
+        self.rgb =rgb
     def _corrected_cnn_format(self, frame: np.ndarray) -> np.ndarray:
-        correct_frame_size: np.ndarray = cv2.resize(frame, (WIDTH,HEIGHT)) #my model was trained on 32 x 32 images so it is good to keep that format up 
+        correct_frame_size: np.ndarray = cv2.resize(frame, (self.width,self.height)) #my model was trained on 32 x 32 images so it is good to keep that format up 
         correct_format: np.ndarray = cv2.cvtColor(correct_frame_size, cv2.COLOR_BGR2RGB) # Tensors require RGB but cv2 outputs BGR meanuing ut must be converted
         return correct_format
 
@@ -174,28 +170,32 @@ class TensorizedFrame:
     def correct_tensor(self, frame) -> torch.Tensor:
         self.corrected_frame: np.ndarray = self._corrected_cnn_format(frame)
         final_correct_tensor_format: torch.Tensor = self._set_tensor_dimentions()
+        final_correct_tensor_format = final_correct_tensor_format.to(self.device)
         return final_correct_tensor_format
 
     
 
-class LoadModel:
-    def __init__(self, dropout_prob):
+class LoadModel(ILoadModel):
+    def __init__(self, dropout_prob, device, trained_weights):
+
         try:
-            self.model = model.CNN_model.SimpleCNN_dropout(dropout_prob).to(device)
+            self.model = model.CNN_model.SimpleCNNDropout(dropout_prob).to(device)
             self.model.load_state_dict(trained_weights)# Here i have to add the finished trained weights
             self.model.to(device)
             self.model.eval()
+            self.frame = None
         except:
             return False
         
 
-    def set_frame_to_model(self,frame) -> model.CNN_model.SimpleCNN_dropout:
+    def _send_frame_to_model(self,frame) -> model.CNN_model.SimpleCNNDropout:
         with torch.no_grad():
             return self.model(frame)
     
-    def get_predictions(self, model) -> tuple[str, float]:
-        prediction_item = torch.argmax(model, dim = 1)
-        probs = torch.softmax(model, dim = 1)
+    def get_predictions(self, frame) -> tuple[str, float]:
+        model_processed_frame = self._send_frame_to_model(frame)
+        prediction_item = torch.argmax(model_processed_frame, dim = 1)
+        probs = torch.softmax(model_processed_frame, dim = 1)
         pred_idx: int = prediction_item.item() #converts a pytorch tensor into a normal number
         confidence:float = probs[0][pred_idx].item()
 
@@ -204,7 +204,7 @@ class LoadModel:
                 "dog", "frog", "horse", "ship", "truck"]
         
         try:
-            item_predicted: str = class_names[prediction_item]
+            item_predicted: str = class_names[pred_idx]
             return (item_predicted, confidence)
         except IndexError:
             return False

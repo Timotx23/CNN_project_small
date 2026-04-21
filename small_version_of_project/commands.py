@@ -4,6 +4,7 @@ import sys
 
 
 
+
 class StartSystem(IStartSystem):
     @staticmethod
     def start_system(model):

@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+
+
 class ICommands(ABC):
     
     @abstractmethod
@@ -48,9 +50,11 @@ class ITerminalManager(ABC):
 
 
 class ISimController(ABC):
+  
     @abstractmethod
     def call_model(self):
         pass
+   
     @abstractmethod
     def camera_preprocessing(self):
         pass
@@ -70,3 +74,13 @@ class ISimController(ABC):
     @abstractmethod
     def system_setup(self):
         pass
+
+
+class ILoadModel(ABC):
+
+    @abstractmethod
+    def get_predictions(self, model):
+        pass
+
+class IPrepCamera(ABC):
+    pass

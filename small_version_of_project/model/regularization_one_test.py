@@ -118,7 +118,7 @@ def test_model(model, test_loader):
 
 
 
-model_d1 = CNN_model.SimpleCNN_dropout(dropout_prob=0.2).to(device)
+model_d1 = CNN_model.SimpleCNNDropout(dropout_prob=0.2).to(device)
 epochs = 200
 val_looses_data_aug, test_loader = train_with_data_augmentation(model_d1, epochs)
 acc, f1 = test_model(model_d1, test_loader)

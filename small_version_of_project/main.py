@@ -1,8 +1,9 @@
 
 from sim_controller import SimController
-class CallModel:
+from interfaces import ISimController
+class CallSim:
     def __init__(self):
-        self.call_controller = SimController()
+        self.call_controller: ISimController  = SimController()
         if self.call_controller.system_setup() == False:
             raise ValueError("Failed to verify some part of the system")
 
@@ -12,10 +13,12 @@ class CallModel:
             self.call_controller.running_model(camera)
             
 
-call_model = CallModel()
-call_model.run_model()
+call_sim = CallSim()
+call_sim.run_model()
 
-
+#TODO -> Add a system so that u can select which camera is going to be used 
 #TODO -> update the UML Diagram to the needed standard
 #TODO -> Figure out a way to make model more efficent
+#TODO -> Fix the naming scheme at some points 
+#TODO -> Rely more heavily on interfaces in order to make the project more scalable 
 

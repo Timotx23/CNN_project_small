@@ -83,7 +83,7 @@ def train_simple():
 
 def test_dropout():
         # Simple test for SimpleCNN_dropout
-    model_d = CNN_model.SimpleCNN_dropout(dropout_prob=0.5)
+    model_d = CNN_model.SimpleCNNDropout(dropout_prob=0.5)
     print(f"Model created with dropout_prob={model_d.dropout_prob}")
 
     # Test with dummy input
@@ -98,7 +98,7 @@ def test_dropout():
 
 def train_with_dropout():
     epochs = 100
-    model_d = CNN_model.SimpleCNN_dropout(dropout_prob=0.5).to(device)
+    model_d = CNN_model.SimpleCNNDropout(dropout_prob=0.5).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model_d.parameters(), lr=0.001)
     val_losses_dropout = train.train_model(model_d, train_loader, val_loader, epochs, criterion, optimizer)
