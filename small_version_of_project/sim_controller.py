@@ -82,7 +82,7 @@ class SimController(ISimController):
         self.device = model.CNN_model.to_devices()
         self.trained_weights = torch.load("model/model_d2.pth", map_location=self.device)
                 
-    def camera_preprocessing(self) -> bool:
+    def cameraprocesser(self) -> bool:
         if self.pre_process_camera.get_camera_path() == False:
             raise ValueError("No usable camera could be found.")
         if self.pre_process_camera.open_camera() == False:
@@ -90,29 +90,29 @@ class SimController(ISimController):
         return True
     
    
-    def load_model(self) -> IModelLoader:
+    def model_loader(self) -> IModelLoader:
         load_model: IModelLoader = ModelLoader(self.dropout_prob, self.device, self.trained_weights)
         return load_model
     
     def system_setup(self) -> bool:
-        if self.camera_preprocessing() == True and self.load_model() != False:
+        if self.cameraprocesser() == True and self.model_loader() != False:
             return True
         raise ValueError("Failed to verify some part of the system")
     
-    def start_system(self) -> None:
+    def system_starter(self) -> None:
         """Starts the threading and the running of the model"""
         input_thread = threading.Thread(target=self.input_queue.input_listener, daemon=True)
         input_thread.start()
         camera: ICamera = Camera(self)
         while self.running:
-           self.run_model(camera)
+           self.model_runner(camera)
         
 
-    def load_tensorized_frame(self) -> IFrameTensorizor:
+    def tensorized_frame_loader(self) -> IFrameTensorizor:
         tensorizedframe: IFrameTensorizor = FrameTensorizor(self.height, self.width, self.rgb, self.device)
         return tensorizedframe
 
-    def run_model(self,camera) -> None:
+    def model_runner(self,camera) -> None:
         self.input_queue.process_commands()
         self.input_queue.process_output()
         camera.get_video(self.input_queue.output_queue, self.show_recording)

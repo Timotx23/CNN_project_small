@@ -88,27 +88,27 @@ class ICamera(ABC):
 class ISimController(ABC):
      
     @abstractmethod
-    def camera_preprocessing(self) -> bool:
+    def cameraprocesser(self) -> bool:
         pass
 
     @abstractmethod
-    def load_model(self) -> IModelLoader:
+    def model_loader(self) -> IModelLoader:
         pass
 
     @abstractmethod
-    def run_model(self, camera) -> None:
+    def model_runner(self, camera) -> None:
         pass
 
     @abstractmethod
-    def load_tensorized_frame(self) -> IFrameTensorizor:
+    def tensorized_frame_loader(self) -> IFrameTensorizor:
         pass
 
     @abstractmethod
     def system_setup(self) -> bool:
         pass
 
-    @ abstractmethod
-    def start_system(self) -> None:
+    @abstractmethod
+    def system_starter(self) -> None:
         pass
 
     

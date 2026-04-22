@@ -2,6 +2,7 @@ from interfaces import ICameraPreper
 import cv2
 import platform
 from cv2_enumerate_cameras import enumerate_cameras
+
 class CameraPreper(ICameraPreper):
     def __init__(self):
         self.system = platform.system()

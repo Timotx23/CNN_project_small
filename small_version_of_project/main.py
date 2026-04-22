@@ -6,7 +6,7 @@ from interfaces import ISimController
 
 if __name__ == '__main__':
     call_controller: ISimController  = SimController()
-    call_controller.start_system()
+    call_controller.system_starter()
 
 
 #TODO -> Add a system so that u can select which camera is going to be used 

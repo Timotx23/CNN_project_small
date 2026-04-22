@@ -9,8 +9,8 @@ class Camera(ICamera):
     def __init__(self,model):
         
         self.model: ISimController = model
-        self.load_model: IModelLoader = model.load_model() 
-        self.tensorizedframe: IFrameTensorizor = model.load_tensorized_frame()
+        self.load_model: IModelLoader = model.model_loader() 
+        self.tensorizedframe: IFrameTensorizor = model.tensorized_frame_loader()
         self.frame_counter = 0
        
         self.pre_process_camera: ICameraPreper = self.model.pre_process_camera
@@ -89,7 +89,7 @@ class ModelLoader(IModelLoader):
 
         try:
             self.model = model.CNN_model.SimpleCNNDropout(dropout_prob).to(device)
-            self.model.load_state_dict(trained_weights)# Here i have to add the finished trained weights
+            self.model.load_state_dict(trained_weights) # Here i have to add the finished trained weights
             self.model.to(device)
             self.model.eval()
             self.frame = None
