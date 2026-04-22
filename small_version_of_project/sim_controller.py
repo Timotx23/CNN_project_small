@@ -1,20 +1,23 @@
-from interfaces import ISimController
+from interfaces import ISimController, ICommands, ICameraPreper, IModelLoader, IFrameTensorizor, ICamera
 import queue
 import threading
 from commands import Commands
-from feed_data import CameraPreper, LoadModel, TensorizedFrame, Camera
+from feed_data import  ModelLoader, FrameTensorizor, Camera
+from camera_prep import CameraPreper 
+
 import time
 import model
 import torch
+import cv2
 
 class UserInputThreading:
-    def __init__(self, owner):
+    def __init__(self, owner) -> None:
         """This class controlls all threading that happens in the simulation system"""
-        self.owner = owner
+        self.owner: ISimController = owner
         self.command_queue = queue.Queue()
         
         self.output_queue = queue.Queue()
-    def input_listener(self):
+    def input_listener(self) -> None:
         if self.owner.system_status == False:
             with self.owner.terminal_lock: 
                 print("System is off. Enter 'ss' to start the system.")
@@ -26,13 +29,13 @@ class UserInputThreading:
             if ui:
                 self.command_queue.put(ui)
 
-    def process_commands(self):
+    def process_commands(self) -> None:
         while not self.command_queue.empty():
                 cmd = self.command_queue.get()
                 self.owner.command_handler.execute(cmd)
                 self.owner.ready_for_input.set()
     
-    def process_output(self):
+    def process_output(self) -> None:
 
         while not self.output_queue.empty():
             if not self.command_queue.empty():
@@ -52,7 +55,7 @@ class SimController(ISimController):
         self._prep_model()
         
     
-    def _prep_threading(self):
+    def _prep_threading(self) -> None:
         """ This function sets up all the things needed for the threading"""
         self.test_mode = False
         self.system_status = False
@@ -64,13 +67,13 @@ class SimController(ISimController):
         self.ready_for_input.set()
         self.input_queue = UserInputThreading(self)
     
-    def _prep_system(self):
+    def _prep_system(self) -> None:
         """ This function sets up the actual system itself in order for the simulation system"""
-        self.command_handler = Commands(self)
-        self.pre_process_camera = CameraPreper()
-        self.video = self.pre_process_camera.open_camera()
+        self.command_handler: ICommands = Commands(self)
+        self.pre_process_camera: ICameraPreper = CameraPreper()
+        self.video: cv2.VideoCapture = self.pre_process_camera.open_camera()
     
-    def _prep_model(self):
+    def _prep_model(self) -> None:
         """ These are the hyper parameters for the CNN model itself """
         self.dropout_prob=0.2
         self.height = 32
@@ -79,35 +82,37 @@ class SimController(ISimController):
         self.device = model.CNN_model.to_devices()
         self.trained_weights = torch.load("model/model_d2.pth", map_location=self.device)
                 
-    def camera_preprocessing(self):
+    def camera_preprocessing(self) -> bool:
         if self.pre_process_camera.get_camera_path() == False:
             raise ValueError("No usable camera could be found.")
         if self.pre_process_camera.open_camera() == False:
             raise ValueError("Unknown camera type.")
         return True
     
-    def call_model(self):
-        input_thread = threading.Thread(target=self.input_queue.input_listener, daemon=True)
-        input_thread.start()
-        camera = Camera(self)
-        return camera
-    
-    
-
-    def load_model(self):
-        load_model: LoadModel = LoadModel(self.dropout_prob, self.device, self.trained_weights)
+   
+    def load_model(self) -> IModelLoader:
+        load_model: IModelLoader = ModelLoader(self.dropout_prob, self.device, self.trained_weights)
         return load_model
     
-    def system_setup(self):
+    def system_setup(self) -> bool:
         if self.camera_preprocessing() == True and self.load_model() != False:
             return True
+        raise ValueError("Failed to verify some part of the system")
+    
+    def start_system(self) -> None:
+        """Starts the threading and the running of the model"""
+        input_thread = threading.Thread(target=self.input_queue.input_listener, daemon=True)
+        input_thread.start()
+        camera: ICamera = Camera(self)
+        while self.running:
+           self.run_model(camera)
         
 
-    def load_tensorized_frame(self):
-        tensorizedframe: TensorizedFrame = TensorizedFrame(self.height, self.width, self.rgb, self.device)
+    def load_tensorized_frame(self) -> IFrameTensorizor:
+        tensorizedframe: IFrameTensorizor = FrameTensorizor(self.height, self.width, self.rgb, self.device)
         return tensorizedframe
 
-    def running_model(self,camera):
+    def run_model(self,camera) -> None:
         self.input_queue.process_commands()
         self.input_queue.process_output()
         camera.get_video(self.input_queue.output_queue, self.show_recording)

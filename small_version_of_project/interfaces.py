@@ -1,24 +1,26 @@
 from abc import ABC, abstractmethod
-
+import torch
+import cv2
+import sys
 
 
 class ICommands(ABC):
     
     @abstractmethod
-    def execute(self):
+    def execute(self) -> bool:
         pass
 
 class IStartSystem(ABC):
     @abstractmethod
-    def start_system(model):
+    def start_system(model) -> None:
         pass
 
 class IEndSystem(ABC):
     @abstractmethod
-    def end_system(model):
+    def end_system(model) -> None:
         pass
     @abstractmethod
-    def terminate(video):
+    def terminate(video, pre_process) -> sys.exit:
         pass
 
 class IStartTest(ABC):
@@ -30,7 +32,8 @@ class IEndTest(ABC):
     @abstractmethod
     def end_test(model):
         pass
-class IShowVideo(ABC):
+
+class IVideoShower(ABC):
     @abstractmethod
     def show_video(model):
         pass
@@ -49,38 +52,63 @@ class ITerminalManager(ABC):
         pass
 
 
+
+
+
+class IModelLoader(ABC):
+
+    @abstractmethod
+    def get_predictions(self, model) -> tuple[str, float]:
+        pass
+
+class ICameraPreper(ABC):
+    
+    @abstractmethod
+    def get_camera_path(self) -> (str, int, bool):
+        pass
+
+    @abstractmethod
+    def open_camera(self) -> cv2.VideoCapture:
+        pass
+
+class IFrameTensorizor(ABC):
+    
+    @abstractmethod
+    def correct_tensor(self, frame) -> torch.tensor:
+        pass
+
+class ICamera(ABC):
+
+    @abstractmethod
+    def get_video(self, output_queue, show_recording) -> bool:
+        pass
+
+
+
 class ISimController(ABC):
-  
+     
     @abstractmethod
-    def call_model(self):
-        pass
-   
-    @abstractmethod
-    def camera_preprocessing(self):
+    def camera_preprocessing(self) -> bool:
         pass
 
     @abstractmethod
-    def load_model(self):
+    def load_model(self) -> IModelLoader:
         pass
 
     @abstractmethod
-    def running_model(self, camera):
+    def run_model(self, camera) -> None:
         pass
 
     @abstractmethod
-    def load_tensorized_frame(self):
+    def load_tensorized_frame(self) -> IFrameTensorizor:
         pass
 
     @abstractmethod
-    def system_setup(self):
+    def system_setup(self) -> bool:
         pass
 
-
-class ILoadModel(ABC):
-
-    @abstractmethod
-    def get_predictions(self, model):
+    @ abstractmethod
+    def start_system(self) -> None:
         pass
 
-class IPrepCamera(ABC):
-    pass
+    

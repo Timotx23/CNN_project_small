@@ -1,115 +1,22 @@
 import cv2
-import platform
-from cv2_enumerate_cameras import enumerate_cameras
 import torch
 import numpy as np
 import model.CNN_model
-from interfaces import ILoadModel, IPrepCamera
+from interfaces import IModelLoader, ICameraPreper, IFrameTensorizor, ICamera, ISimController, IFrameTensorizor
 
 
-
-
-class CameraPreper(IPrepCamera):
-    def __init__(self):
-        self.system = platform.system()
-        self.backend = self._get_os()
-        self.camera_type, self.path, self.cv_backend = self.get_camera_path()
-
-    def _get_os(self) -> int:
-        """
-        Detect OS-specific OpenCV backend.
-        """
-        if self.system == "Darwin":
-            return cv2.CAP_AVFOUNDATION
-        elif self.system == "Windows":
-            return cv2.CAP_MSMF
-        else:
-            return cv2.CAP_V4L2
-
-    def get_camera_path(self):
-        """
-        Returns:
-            ("picamera2", 0, None) for Raspberry Pi CSI camera
-            ("cv2", cam_index, cam_backend) for regular webcams
-        """
-
-        # Raspberry Pi CSI camera path
-        if self.system == "Linux":
-            try:
-                from picamera2 import Picamera2
-
-                picam2 = Picamera2(0)
-                picam2.configure(
-                    picam2.create_preview_configuration(main={"size": (640, 480)})
-                )
-                picam2.start()
-                frame = picam2.capture_array()
-                picam2.stop()
-                picam2.close()
-                if frame is not None:
-                    return "picamera2", 0, None
-
-            except Exception as e:
-                print(f"Picamera2 test failed: {e}")
-
-        # Fallback for normal OpenCV webcams
-        cams = enumerate_cameras(self.backend)
-
-        for cam in cams:
-            cam_name = cam.name.lower()
-
-            if "facecam" in cam_name or "webcam" in cam_name or "camera" in cam_name:
-                test_cap = cv2.VideoCapture(cam.index, cam.backend)
-
-                if not test_cap.isOpened():
-                    print(f"Warning: Index {cam.index} matched but failed to open.")
-                success, _ = test_cap.read()
-                test_cap.release()
-
-                if  not success:
-                    print(f"Warning: Index {cam.index} matched name but failed to read a frame.")
-                print("CAMERA WORKING", cam.name, cam.index)
-                return "cv2", cam.index, cam.backend
-                    
-
-        return False
-
-    def open_camera(self):
-        """
-        Open camera based on detected backend.
-        """
-        if self.camera_type == "picamera2":
-            from picamera2 import Picamera2
-
-            cam = Picamera2(self.path)
-            cam.configure(
-                cam.create_preview_configuration(main={"size": (640, 480)})
-            )
-            cam.start()
-            return cam
-
-        elif self.camera_type == "cv2":
-            cam = cv2.VideoCapture(self.path, self.cv_backend)
-            if not cam.isOpened():
-                raise ValueError("Failed to open OpenCV camera.")
-            return cam
-
-        return False
-
-
-class Camera:
+class Camera(ICamera):
     def __init__(self,model):
         
-        self.model = model
-        self.load_model: LoadModel = model.load_model() 
-        self.tensorizedframe: TensorizedFrame = model.load_tensorized_frame()
+        self.model: ISimController = model
+        self.load_model: IModelLoader = model.load_model() 
+        self.tensorizedframe: IFrameTensorizor = model.load_tensorized_frame()
         self.frame_counter = 0
        
+        self.pre_process_camera: ICameraPreper = self.model.pre_process_camera
+        self.video: ICameraPreper.open_camera = self.model.video
 
-        self.pre_process_camera = self.model.pre_process_camera
-        self.video = self.model.video
-
-    def _read_frame(self):
+    def _read_frame(self) -> (bool, cv2 ):
         """
         Read one frame from either Picamera2 or OpenCV.
         """
@@ -144,10 +51,12 @@ class Camera:
     
     
 
-class TensorizedFrame:
+class FrameTensorizor(IFrameTensorizor):
 
     def __init__(self, height, width, rgb, device) -> None:
-        """This class has 1 major task which is to prepare the frame for the CNN"""
+        """This class has 1 major task which is to prepare the frame for the CNN
+        This function can still be improved for better data feed for the CNN
+        """
         self.device = device
         self.corrected_frame = None
         self.height = height
@@ -175,7 +84,7 @@ class TensorizedFrame:
 
     
 
-class LoadModel(ILoadModel):
+class ModelLoader(IModelLoader):
     def __init__(self, dropout_prob, device, trained_weights):
 
         try:
