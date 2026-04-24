@@ -52,9 +52,6 @@ class ITerminalManager(ABC):
         pass
 
 
-
-
-
 class IModelLoader(ABC):
 
     @abstractmethod
@@ -83,7 +80,10 @@ class ICamera(ABC):
     def get_video(self, output_queue, show_recording) -> bool:
         pass
 
-
+class IModel(ABC):
+    @abstractmethod
+    def model_predictions(self, frame):
+        pass
 
 class ISimController(ABC):
      
@@ -92,16 +92,14 @@ class ISimController(ABC):
         pass
 
     @abstractmethod
-    def model_loader(self) -> IModelLoader:
+    def model_loader(self) -> IModel:
         pass
 
     @abstractmethod
     def model_runner(self, camera) -> None:
         pass
 
-    @abstractmethod
-    def tensorized_frame_loader(self) -> IFrameTensorizor:
-        pass
+
 
     @abstractmethod
     def system_setup(self) -> bool:
@@ -110,5 +108,6 @@ class ISimController(ABC):
     @abstractmethod
     def system_starter(self) -> None:
         pass
+
 
     

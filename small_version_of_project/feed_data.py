@@ -2,15 +2,17 @@ import cv2
 import torch
 import numpy as np
 import model.CNN_model
-from interfaces import IModelLoader, ICameraPreper, IFrameTensorizor, ICamera, ISimController, IFrameTensorizor
+from interfaces import IModelLoader, ICameraPreper, IFrameTensorizor, ICamera, ISimController, IFrameTensorizor, IModel
 
 
 class Camera(ICamera):
     def __init__(self,model):
         
         self.model: ISimController = model
-        self.load_model: IModelLoader = model.model_loader() 
-        self.tensorizedframe: IFrameTensorizor = model.tensorized_frame_loader()
+        self.CNN_model = model.model_loader()
+
+        self.load_model: IModelLoader = self.CNN_model# fix
+        
         self.frame_counter = 0
        
         self.pre_process_camera: ICameraPreper = self.model.pre_process_camera
@@ -42,15 +44,28 @@ class Camera(ICamera):
             cv2.waitKey(1)
 
         if self.frame_counter % 3 == 0 and self.model.test_mode is True:
-            correct_frame_format: torch.Tensor = self.tensorizedframe.correct_tensor(frame)
-            prediction: tuple = self.load_model.get_predictions(correct_frame_format)
+            model_predictions: IModelLoader.get_predictions = self.CNN_model.model_predictions(frame)
             if self.model.terminal_mode == "model":
-                output_queue.put(prediction)
+                output_queue.put(model_predictions)
         return True
     
     
     
+class Model(IModel):
+    def __init__(self, height, width, rgb, device, dropout_prob,trained_weights):
+        self.tensor_frame = FrameTensorizor(height, width, rgb, device )
+        self.model_loader = ModelLoader(dropout_prob, device, trained_weights)
+    
 
+    def _tensorized_frame(self, frame):
+        """Ensures that the frame that is being collected is correct with the data on which the CNN was trained on. It takes a frame and turns it into the correct tensor which is passed onto the model"""
+        return self.tensor_frame.correct_tensor(frame)
+    
+    def model_predictions(self, frame):
+        correct_frame_format = self._tensorized_frame(frame)
+        return self.model_loader.get_predictions(correct_frame_format)
+
+    
 class FrameTensorizor(IFrameTensorizor):
 
     def __init__(self, height, width, rgb, device) -> None:

@@ -1,8 +1,8 @@
-from interfaces import ISimController, ICommands, ICameraPreper, IModelLoader, IFrameTensorizor, ICamera
+from interfaces import ISimController, ICommands, ICameraPreper, IModelLoader, IModel, ICamera
 import queue
 import threading
 from commands import Commands
-from feed_data import  ModelLoader, FrameTensorizor, Camera
+from feed_data import  ModelLoader, FrameTensorizor, Camera, Model
 from camera_prep import CameraPreper 
 
 import time
@@ -90,8 +90,8 @@ class SimController(ISimController):
         return True
     
    
-    def model_loader(self) -> IModelLoader:
-        load_model: IModelLoader = ModelLoader(self.dropout_prob, self.device, self.trained_weights)
+    def model_loader(self) -> IModel:
+        load_model: IModelLoader = Model(self.height, self.width, self.rgb, self.device, self.dropout_prob, self.trained_weights)
         return load_model
     
     def system_setup(self) -> bool:
@@ -108,9 +108,7 @@ class SimController(ISimController):
            self.model_runner(camera)
         
 
-    def tensorized_frame_loader(self) -> IFrameTensorizor:
-        tensorizedframe: IFrameTensorizor = FrameTensorizor(self.height, self.width, self.rgb, self.device)
-        return tensorizedframe
+    
 
     def model_runner(self,camera) -> None:
         self.input_queue.process_commands()

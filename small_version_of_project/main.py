@@ -12,6 +12,6 @@ if __name__ == '__main__':
 #TODO -> Add a system so that u can select which camera is going to be used 
 #TODO -> update the UML Diagram to the needed standard
 #TODO -> Figure out a way to make model more efficent
-#TODO -> Fix the naming scheme at some points 
+ 
 
 
